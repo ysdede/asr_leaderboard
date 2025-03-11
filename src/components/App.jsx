@@ -5,6 +5,7 @@ import LoadingState from './LoadingState';
 import ErrorState from './ErrorState';
 import EmptyState from './EmptyState';
 import CSVParser from '../utils/CSVParser';
+import GitInfo from './GitInfo';
 
 const App = () => {
   const [metrics, setMetrics] = useState([]);
@@ -116,7 +117,9 @@ const App = () => {
   };
 
   const formatNumber = (value) => {
-    if (!value) return '-';
+    if (!value) {
+      return '-';
+    }
     const num = parseFloat(value);
     return isNaN(num) ? value : num.toFixed(2);
   };
@@ -189,7 +192,7 @@ const App = () => {
   }
 
   return (
-    <div className="flex flex-col space-y-8">
+    <div className="flex flex-col space-y-8 pb-4">
       <AverageScoresTable 
         metrics={metrics}
         datasets={datasets}
@@ -200,16 +203,16 @@ const App = () => {
       />
       <ASRBenchmarkTable 
         metrics={sortedMetrics}
-        sortConfig={sortConfig}
         requestSort={requestSort}
+        sortConfig={sortConfig}
         formatNumber={formatNumber}
         selectedDataset={selectedDataset}
         datasets={datasets}
         onDatasetChange={setSelectedDataset}
-        darkMode={darkMode}
-        toggleTheme={toggleTheme}
-        debugInfo={debugInfo}
       />
+      <div className="mt-8 border-t pt-2 dark:border-gray-700">
+        <GitInfo />
+      </div>
     </div>
   );
 };

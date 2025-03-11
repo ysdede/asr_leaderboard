@@ -72,65 +72,88 @@ const cloneHfSpaceRepo = () => {
   }
 };
 
-// Clean all files in the temp directory except .git
-const cleanTempDirectory = () => {
-  console.log('🧹 Cleaning files in the repository (keeping .git)...');
+// Clean the temporary directory (keep only .git folder)
+const cleanTempDir = () => {
+  console.log('🧹 Cleaning temporary directory...');
   
-  fs.readdirSync(TEMP_DIR).forEach(file => {
-    if (file !== '.git') {
-      const filePath = path.join(TEMP_DIR, file);
-      try {
-        if (fs.lstatSync(filePath).isDirectory()) {
-          fs.rmSync(filePath, { recursive: true, force: true });
-        } else {
-          fs.unlinkSync(filePath);
-        }
-      } catch (error) {
-        console.error(`⚠️ Could not remove ${file}: ${error.message}`);
+  // Get all files and directories in TEMP_DIR
+  const items = fs.readdirSync(TEMP_DIR);
+  
+  // Remove all items except .git
+  for (const item of items) {
+    if (item !== '.git') {
+      const itemPath = path.join(TEMP_DIR, item);
+      if (fs.lstatSync(itemPath).isDirectory()) {
+        fs.rmSync(itemPath, { recursive: true, force: true });
+      } else {
+        fs.unlinkSync(itemPath);
       }
     }
-  });
+  }
   
-  console.log('✅ Repository cleaned');
+  console.log('✅ Temporary directory cleaned');
 };
 
-// Copy build files and template files to the temporary directory
-const copyFilesToTemp = () => {
-  console.log('🚀 Copying build and template files to the repository...');
+// Get git information from the source repository
+const getGitInfo = () => {
+  try {
+    const branch = runCommand('git rev-parse --abbrev-ref HEAD', process.cwd(), true).output.trim();
+    const commitId = runCommand('git rev-parse --short HEAD', process.cwd(), true).output.trim();
+    return { branch, commitId };
+  } catch (error) {
+    console.error('Error getting git info:', error.message);
+    return { branch: 'unknown', commitId: 'unknown' };
+  }
+};
+
+// Copy build files to temporary directory
+const copyBuildFiles = () => {
+  console.log('📂 Copying build files to temporary directory...');
   
-  // Copy all files from dist to the temp directory
-  fs.readdirSync(DIST_DIR).forEach(file => {
+  // Copy all files from dist to TEMP_DIR
+  const distFiles = fs.readdirSync(DIST_DIR);
+  for (const file of distFiles) {
     const srcPath = path.join(DIST_DIR, file);
     const destPath = path.join(TEMP_DIR, file);
     
-    try {
-      if (fs.lstatSync(srcPath).isDirectory()) {
-        fs.cpSync(srcPath, destPath, { recursive: true });
-      } else {
-        fs.copyFileSync(srcPath, destPath);
-      }
-    } catch (error) {
-      console.error(`⚠️ Could not copy ${file}: ${error.message}`);
+    if (fs.lstatSync(srcPath).isDirectory()) {
+      // Use fs-extra's copySync for directories
+      fs.cpSync(srcPath, destPath, { recursive: true });
+    } else {
+      fs.copyFileSync(srcPath, destPath);
     }
-  });
+  }
+  
+  // Create git-info.json file
+  const gitInfo = getGitInfo();
+  fs.writeFileSync(
+    path.join(TEMP_DIR, 'git-info.json'),
+    JSON.stringify(gitInfo, null, 2)
+  );
+  console.log(`Created git-info.json with branch: ${gitInfo.branch}, commit: ${gitInfo.commitId}`);
+  
+  console.log('✅ Build files copied to temporary directory');
+};
 
-  // Copy all files from template to the temp directory
-  fs.readdirSync(TEMPLATE_DIR).forEach(file => {
+// Copy template files to temporary directory
+const copyTemplateFiles = () => {
+  console.log('📂 Copying template files to temporary directory...');
+  
+  // Copy all files from template to TEMP_DIR
+  const templateFiles = fs.readdirSync(TEMPLATE_DIR);
+  for (const file of templateFiles) {
     const srcPath = path.join(TEMPLATE_DIR, file);
     const destPath = path.join(TEMP_DIR, file);
     
-    try {
-      if (fs.lstatSync(srcPath).isDirectory()) {
-        fs.cpSync(srcPath, destPath, { recursive: true });
-      } else {
-        fs.copyFileSync(srcPath, destPath);
-      }
-    } catch (error) {
-      console.error(`⚠️ Could not copy ${file}: ${error.message}`);
+    if (fs.lstatSync(srcPath).isDirectory()) {
+      // Use fs-extra's copySync for directories
+      fs.cpSync(srcPath, destPath, { recursive: true });
+    } else {
+      fs.copyFileSync(srcPath, destPath);
     }
-  });
+  }
   
-  console.log('✅ Build and template files copied');
+  console.log('✅ Template files copied to temporary directory');
 };
 
 // Commit and push changes to HF Space
@@ -149,10 +172,13 @@ const commitAndPush = () => {
     return;
   }
   
+  // Get git info
+  const gitInfo = getGitInfo();
+  
   // There are changes, proceed with commit
   const timestamp = new Date().toISOString();
   console.log('Changes detected, committing...');
-  runCommand(`git commit -m "Update leaderboard: ${timestamp}"`, TEMP_DIR);
+  runCommand(`git commit -m "Update leaderboard: ${timestamp} [${gitInfo.branch}:${gitInfo.commitId}]"`, TEMP_DIR);
   
   // Force push to main branch (this will overwrite any remote changes)
   console.log('Force pushing to Hugging Face Space repository...');
@@ -200,8 +226,9 @@ const main = async () => {
   checkDistDirectory();
   setupTempDirectory();
   cloneHfSpaceRepo();
-  cleanTempDirectory(); // Clean all files except .git before copying new files
-  copyFilesToTemp(); // Copy both dist and template files
+  cleanTempDir();
+  copyBuildFiles();
+  copyTemplateFiles();
   commitAndPush();
   cleanUp();
   
