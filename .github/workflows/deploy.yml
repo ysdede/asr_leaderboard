@@ -28,6 +28,8 @@ jobs:
         with:
           repository: ${{ secrets.HF_SPACE_REPO }}
           token: ${{ secrets.HF_TOKEN }}
-          files: dist/
+          files: .  # Upload all files from the working-directory (dist)
+          path-in-repo: .  # Deploy to root of Space repo
           repository-type: space
           space-sdk: static
+        working-directory: dist  # Run this step inside the dist folder
