@@ -1,12 +1,191 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Hugging Face inspired styles and color scheme */
+:root {
+  --hf-primary: #0ea5e9; /* Hugging Face blue */
+  --hf-secondary: #ec4899; /* Hugging Face pink */
+  --hf-font-sans: 'Source Sans Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --hf-font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
 
-/* Custom styles from the original styles.css and transitions.css can be added here */
+/* Dark mode colors */
+.dark {
+  --bg-primary: #111827; /* gray-950 */
+  --bg-secondary: #1f2937; /* gray-800 */
+  --bg-tertiary: #374151; /* gray-700 */
+  --text-primary: #f9fafb; /* gray-50 */
+  --text-secondary: #e5e7eb; /* gray-200 */
+  --border-color: #4b5563; /* gray-600 */
+}
+
+/* Light mode colors */
+:root:not(.dark) {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb; /* gray-50 */
+  --bg-tertiary: #f3f4f6; /* gray-100 */
+  --text-primary: #111827; /* gray-950 */
+  --text-secondary: #4b5563; /* gray-600 */
+  --border-color: #e5e7eb; /* gray-200 */
+}
+
+/* Base styles */
 body {
+  font-family: var(--hf-font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Code and pre elements */
+code, pre {
+  font-family: var(--hf-font-mono);
+}
+
+/* Transitions */
 .theme-transition {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Table styling - using standard CSS instead of @apply */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  background-color: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 1rem; /* Increase font size for table headers */
+}
+
+.dark th {
+  background-color: #1f2937;
+  border-bottom: 1px solid #4b5563;
+}
+
+td {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.875rem; /* Increase font size for table data */
+}
+
+.dark td {
+  border-bottom: 1px solid #4b5563;
+}
+
+/* Datasets column styling */
+.datasets-col {
+  white-space: normal; /* Allow text to wrap */
+  overflow-wrap: break-word; /* Break long words */
+  word-wrap: break-word; /* Support for older browsers */
+  max-width: 12rem; /* Set a maximum width to control wrapping */
+}
+
+/* Ensure consistent row height */
+tr {
+  height: auto; /* Allow row height to adjust based on content */
+  min-height: 2.5rem; /* Set a minimum height for consistency */
+}
+
+/* Card styling similar to Hugging Face */
+.hf-card {
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.dark .hf-card {
+  border: 1px solid #4b5563;
+  background-color: #1f2937;
+}
+
+.hf-card-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+}
+
+.dark .hf-card-header {
+  border-bottom: 1px solid #4b5563;
+}
+
+.hf-card-body {
+  padding: 1rem;
+}
+
+/* Button styling */
+.hf-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.hf-button-primary {
+  background-color: #0ea5e9;
+  color: white;
+}
+
+.hf-button-primary:hover {
+  background-color: #0284c7;
+}
+
+.hf-button-secondary {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.hf-button-secondary:hover {
+  background-color: #d1d5db;
+}
+
+.dark .hf-button-secondary {
+  background-color: #4b5563;
+  color: white;
+}
+
+.dark .hf-button-secondary:hover {
+  background-color: #374151;
+}
+
+/* Gradient backgrounds like Hugging Face */
+.hf-gradient-blue-pink {
+  background: linear-gradient(to right, #0ea5e9, #ec4899);
+}
+
+/* Input styling */
+.hf-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #111827;
+}
+
+.hf-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.5);
+}
+
+.dark .hf-input {
+  border: 1px solid #4b5563;
+  background-color: #374151;
+  color: white;
+}
+
+.dark .hf-input:focus {
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.5);
+}
+
+/* Global link styling in dark mode */
+.dark a {
+  color: #a3c9f1; /* Standard light blue color for all links */
+}
+
+/* Ensure links have a distinct hover state */
+.dark a:hover {
+  color: #d0e7ff; /* Even lighter blue on hover */
 }

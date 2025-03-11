@@ -239,7 +239,7 @@ const AverageScoresTable = ({
                   )}
                 </div>
               </th>
-              <th className="py-2 px-2 text-left text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
+              <th className="py-2 px-2 text-left text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap datasets-col">
                 Datasets
               </th>
               <th className="py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -281,7 +281,7 @@ const AverageScoresTable = ({
                 <td className="py-2 px-2 text-xs text-center whitespace-nowrap">
                   {Math.round(parseFloat(item.avgSpeed))}
                 </td>
-                <td className="py-2 px-2 text-xs text-left">
+                <td className="py-2 px-2 text-xs text-left datasets-col">
                   <div className="flex items-center" title={item.includedDatasets}>
                     <span className="font-bold text-xs dark:text-gray-300 text-gray-700 mr-1">
                       {item.datasetCount}
