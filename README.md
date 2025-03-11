@@ -1,19 +1,20 @@
-# 🎙️ Turkish ASR Leaderboard
+# 🎙️ ASR Leaderboard
 
 ![GitHub](https://img.shields.io/github/license/ysdede/asr_leaderboard)
 ![React](https://img.shields.io/badge/React-18.2.0-61dafb)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.0-38b2ac)
 ![Vite](https://img.shields.io/badge/Vite-5.0.8-646cff)
 
-A dynamic and interactive leaderboard for Turkish Automatic Speech Recognition (ASR) models. This project automatically fetches benchmark results from a Hugging Face dataset, parses the data, and presents it in an organized, sortable table format.
+A dynamic and interactive leaderboard for Automatic Speech Recognition (ASR) models. While the current implementation focuses on Turkish ASR models, the project is designed to be universal and can be easily adapted for other languages and datasets.
 
-## 🌟 Features
+## 🌟 Key Features
 
+- **Universal Architecture**: Designed for easy adaptation to different languages and datasets
 - **Real-time Data**: Fetches the latest benchmark results directly from Hugging Face datasets
 - **Interactive Tables**: Sort and filter ASR models by various performance metrics
-- **Multi-Dataset Support**: View performance across different Turkish speech datasets
+- **Multi-Dataset Support**: View performance across different speech datasets
 - **Responsive Design**: Optimized for both desktop and mobile viewing
-- **Dark/Light Mode**: Toggle between themes for comfortable viewing in any environment
+- **Dark/Light Mode**: Automatically adapts to user's Hugging Face theme preference for seamless viewing experience
 - **Automated Deployment**: Seamless deployment to Hugging Face Spaces
 
 ## 📊 Metrics Displayed
@@ -25,7 +26,7 @@ A dynamic and interactive leaderboard for Turkish Automatic Speech Recognition (
 
 ## 🚀 Live Demo
 
-Visit the live leaderboard at [Hugging Face Spaces](https://huggingface.co/spaces/ysdede/turkish_asr_leaderboard)
+Visit the Turkish ASR Leaderboard demo at [Hugging Face Spaces](https://huggingface.co/spaces/ysdede/turkish_asr_leaderboard)
 
 ## 🛠️ Technology Stack
 
@@ -85,12 +86,17 @@ yarn deploy-to-hf
 
 ## 🔄 Adapting for Other Languages/Projects
 
-This leaderboard can be easily adapted for other languages or ASR projects:
+This leaderboard is designed to be easily adapted for other languages or ASR projects:
 
-1. Update the data source URL in `src/components/App.jsx` to point to your benchmark dataset
-2. Modify the column headers and metrics as needed
-3. Update the Hugging Face Space configuration in `space_template/README.md`
-4. Deploy to your own Hugging Face Space
+1. **Data Source**: Update the data source URL in `src/components/App.jsx` to point to your benchmark dataset
+2. **Customization**: Modify the column headers and metrics as needed in the configuration files
+3. **Metadata**: Update the Hugging Face Space configuration in `space_template/README.md`
+4. **Deployment**: Deploy to your own Hugging Face Space with a single command
+
+We're actively working on adding more customization settings to make adaptation even easier. Future updates will include:
+- Configuration files for language-specific settings
+- Templates for different types of speech datasets
+- Documentation for adapting the project to new languages
 
 ## 📄 License
 
