@@ -1,13 +1,11 @@
 import React from 'react';
-import ThemeToggle from './ThemeToggle';
 import DatasetFilter from './DatasetFilter';
 
-const EmptyState = ({ darkMode, toggleTheme, selectedDataset, datasets, onDatasetChange }) => {
+const EmptyState = ({ selectedDataset, datasets, onDatasetChange }) => {
   return (
     <div className="max-w-6xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-bold dark:text-gray-100 text-gray-800">ASR Benchmark Comparison</h1>
-        <ThemeToggle darkMode={darkMode} toggleTheme={toggleTheme} />
       </div>
       
       <DatasetFilter 

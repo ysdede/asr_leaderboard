@@ -6,6 +6,7 @@ import ErrorState from './ErrorState';
 import EmptyState from './EmptyState';
 import CSVParser from '../utils/CSVParser';
 import GitInfo from './GitInfo';
+import ProjectInfo from './ProjectInfo';
 
 const App = () => {
   const [metrics, setMetrics] = useState([]);
@@ -182,8 +183,6 @@ const App = () => {
   if (sortedMetrics.length === 0) {
     return (
       <EmptyState 
-        darkMode={darkMode} 
-        toggleTheme={toggleTheme} 
         selectedDataset={selectedDataset} 
         datasets={datasets} 
         onDatasetChange={setSelectedDataset} 
@@ -213,6 +212,7 @@ const App = () => {
       <div className="mt-8 border-t pt-2 dark:border-gray-700">
         <GitInfo />
       </div>
+      <ProjectInfo />
     </div>
   );
 };

@@ -1,13 +1,11 @@
 import React from 'react';
-import ThemeToggle from './ThemeToggle';
 import DatasetFilter from './DatasetFilter';
 
-const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, selectedDataset, datasets, onDatasetChange, darkMode, toggleTheme, debugInfo }) => {
+const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, selectedDataset, datasets, onDatasetChange }) => {
   return (
     <div className="max-w-7xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-bold dark:text-gray-100 text-gray-800">ASR Benchmark Comparison</h1>
-        <ThemeToggle darkMode={darkMode} toggleTheme={toggleTheme} />
       </div>
       
       <DatasetFilter 
@@ -148,7 +146,6 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
         <p className="mt-4 text-xs dark:text-gray-500 text-gray-500">
           Last updated: {metrics[0]?.timestamp ? new Date(metrics[0].timestamp.substring(0,8).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).toLocaleDateString() : 'Unknown'}
         </p>
-        <p className="mt-1 text-xs dark:text-gray-600 text-gray-500">{debugInfo}</p>
       </div>
     </div>
   );
