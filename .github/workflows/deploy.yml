@@ -29,3 +29,5 @@ jobs:
           repository: ${{ secrets.HF_SPACE_REPO }}
           token: ${{ secrets.HF_TOKEN }}
           files: dist/
+          repository-type: space
+          space-sdk: static
