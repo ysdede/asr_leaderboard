@@ -133,17 +133,7 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
       </div>
       
       <div className="mt-4 text-xs dark:text-gray-400 text-gray-600 dark:bg-dark-100 bg-white p-3 rounded-lg shadow-md">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div>
-            <p><span className="font-semibold">WER</span>: Word Error Rate (lower is better)</p>
-            <p><span className="font-semibold">CER</span>: Character Error Rate (lower is better)</p>
-          </div>
-          <div>
-            <p><span className="font-semibold">Similarity</span>: Cosine similarity between reference and prediction texts (higher is better)</p>
-            <p><span className="font-semibold">Speed</span>: Real-time factor (higher is better)</p>
-          </div>
-        </div>
-        <p className="mt-4 text-xs dark:text-gray-500 text-gray-500">
+        <p className="text-xs dark:text-gray-500 text-gray-500">
           Last updated: {metrics.length > 0 ? 
             (() => {
               // Get the last element of the metrics array (most recent)
