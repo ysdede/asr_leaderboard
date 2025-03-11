@@ -135,12 +135,23 @@ const copyFilesToTemp = () => {
 
 // Commit and push changes to HF Space
 const commitAndPush = () => {
-  console.log('🚀 Committing and pushing changes to Hugging Face Space...');
+  console.log('🚀 Checking for changes and pushing to Hugging Face Space...');
   
-  const timestamp = new Date().toISOString();
-  
-  // Add and commit changes
+  // Add all changes to staging
   runCommand('git add .', TEMP_DIR);
+  
+  // Check if there are any changes to commit
+  const statusResult = runCommand('git status --porcelain', TEMP_DIR, true);
+  
+  // If there are no changes, skip commit and push
+  if (!statusResult.output || statusResult.output.trim() === '') {
+    console.log('✅ No changes detected. Repository is already up to date.');
+    return;
+  }
+  
+  // There are changes, proceed with commit
+  const timestamp = new Date().toISOString();
+  console.log('Changes detected, committing...');
   runCommand(`git commit -m "Update leaderboard: ${timestamp}"`, TEMP_DIR);
   
   // Force push to main branch (this will overwrite any remote changes)
