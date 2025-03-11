@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles from the original styles.css and transitions.css can be added here */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
