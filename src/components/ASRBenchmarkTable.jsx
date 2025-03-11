@@ -144,7 +144,15 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
           </div>
         </div>
         <p className="mt-4 text-xs dark:text-gray-500 text-gray-500">
-          Last updated: {metrics[0]?.timestamp ? new Date(metrics[0].timestamp.substring(0,8).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).toLocaleDateString() : 'Unknown'}
+          Last updated: {metrics.length > 0 ? 
+            (() => {
+              // Get the last element of the metrics array (most recent)
+              const ts = metrics[metrics.length - 1].timestamp;
+              // Format: yyyymmddhhmmss -> yyyy-mm-dd hh:mm:ss
+              const formattedDate = `${ts.substring(0,4)}-${ts.substring(4,6)}-${ts.substring(6,8)} ${ts.substring(8,10)}:${ts.substring(10,12)}:${ts.substring(12,14)}`;
+              return new Date(formattedDate).toLocaleString();
+            })() 
+            : 'Unknown'}
         </p>
       </div>
     </div>
