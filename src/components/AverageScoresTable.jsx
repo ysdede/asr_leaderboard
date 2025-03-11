@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
 
 const AverageScoresTable = ({ 
@@ -9,8 +9,26 @@ const AverageScoresTable = ({
   toggleTheme, 
   debugInfo 
 }) => {
-  const [selectedDatasets, setSelectedDatasets] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: 'avgWer', direction: 'asc' });
+  const [selectedDatasets, setSelectedDatasets] = useState(() => {
+    // Try to get saved dataset selections from localStorage
+    const savedSelections = localStorage.getItem('selectedAverageDatasets');
+    return savedSelections ? JSON.parse(savedSelections) : [];
+  });
+  const [sortConfig, setSortConfig] = useState(() => {
+    // Try to get saved sort config from localStorage
+    const savedSortConfig = localStorage.getItem('averageSortConfig');
+    return savedSortConfig ? JSON.parse(savedSortConfig) : { key: 'avgWer', direction: 'asc' };
+  });
+
+  // Save selected datasets to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('selectedAverageDatasets', JSON.stringify(selectedDatasets));
+  }, [selectedDatasets]);
+
+  // Save sort config to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('averageSortConfig', JSON.stringify(sortConfig));
+  }, [sortConfig]);
 
   // Toggle dataset selection
   const toggleDataset = (datasetName) => {

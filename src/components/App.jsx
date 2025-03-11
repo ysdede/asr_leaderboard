@@ -13,9 +13,17 @@ const App = () => {
   const [datasets, setDatasets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortConfig, setSortConfig] = useState({ key: 'wer', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState(() => {
+    // Try to get saved sort config from localStorage
+    const savedSortConfig = localStorage.getItem('sortConfig');
+    return savedSortConfig ? JSON.parse(savedSortConfig) : { key: 'wer', direction: 'asc' };
+  });
   const [debugInfo, setDebugInfo] = useState('');
-  const [selectedDataset, setSelectedDataset] = useState('all');
+  const [selectedDataset, setSelectedDataset] = useState(() => {
+    // Try to get saved dataset selection from localStorage
+    const savedDataset = localStorage.getItem('selectedDataset');
+    return savedDataset || 'all';
+  });
   const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
 
   // Simplified theme handling - just initialize once
@@ -25,6 +33,16 @@ const App = () => {
     setDarkMode(isDark);
     console.log("React component initialized with theme:", isDark ? "DARK" : "LIGHT");
   }, []);
+
+  // Save selected dataset to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('selectedDataset', selectedDataset);
+  }, [selectedDataset]);
+
+  // Save sort config to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('sortConfig', JSON.stringify(sortConfig));
+  }, [sortConfig]);
 
   useEffect(() => {
     const fetchData = async () => {
