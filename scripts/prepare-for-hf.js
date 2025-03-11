@@ -1,34 +1,23 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PROJECT_ROOT = path.join(__dirname, '..');
+const TEMPLATE_DIR = path.join(PROJECT_ROOT, 'space_template');
 
 // Create README.md for Hugging Face Space
 const createReadme = () => {
-  const readmeContent = `# Turkish ASR Leaderboard
-
-This is a benchmark leaderboard for Turkish Automatic Speech Recognition (ASR) models. It displays performance metrics for various ASR models tested on Turkish speech datasets.
-
-## Metrics
-
-- **WER**: Word Error Rate (lower is better)
-- **CER**: Character Error Rate (lower is better)
-- **Similarity**: Cosine similarity between reference and prediction texts (higher is better)
-- **Speed**: Real-time factor (higher is better)
-
-## Source Code
-
-The source code for this project is available on GitHub: [https://github.com/ysdede/turkish_asr_leaderboard](https://github.com/ysdede/turkish_asr_leaderboard)
-`;
-
-  fs.writeFileSync(path.join(__dirname, '../dist/README.md'), readmeContent);
-  console.log('✅ Created README.md for Hugging Face Space');
-};
-
-// Create a simple requirements.txt file (needed for some HF Spaces)
-const createRequirements = () => {
-  const requirementsContent = `# No Python requirements - this is a static HTML app
-`;
-  fs.writeFileSync(path.join(__dirname, '../dist/requirements.txt'), requirementsContent);
-  console.log('✅ Created requirements.txt for Hugging Face Space');
+  const readmeSpacePath = path.join(PROJECT_ROOT, 'READMESPACE.md');
+  
+  if (fs.existsSync(readmeSpacePath)) {
+    fs.copyFileSync(readmeSpacePath, path.join(TEMPLATE_DIR, 'README.md'));
+    console.log('✅ Copied READMESPACE.md to README.md for Hugging Face Space');
+  } else {
+    console.warn('⚠️ READMESPACE.md not found, skipping README.md creation');
+  }
 };
 
 // Create a .gitattributes file to handle line endings correctly
@@ -36,7 +25,7 @@ const createGitAttributes = () => {
   const gitattributesContent = `* text=auto eol=lf
 *.{png,jpg,jpeg,gif,webp,woff,woff2} binary
 `;
-  fs.writeFileSync(path.join(__dirname, '../dist/.gitattributes'), gitattributesContent);
+  fs.writeFileSync(path.join(TEMPLATE_DIR, '.gitattributes'), gitattributesContent);
   console.log('✅ Created .gitattributes for Hugging Face Space');
 };
 
@@ -49,13 +38,17 @@ const main = () => {
     console.error('❌ dist directory not found. Run "npm run build" first.');
     process.exit(1);
   }
+
+  // Ensure template directory exists
+  if (!fs.existsSync(TEMPLATE_DIR)) {
+    fs.mkdirSync(TEMPLATE_DIR, { recursive: true });
+  }
   
-  // Create necessary files
+  // Create necessary files in the template directory
   createReadme();
-  createRequirements();
   createGitAttributes();
   
-  console.log('✨ Build is ready for Hugging Face Spaces!');
+  console.log('✨ Template is ready for Hugging Face Spaces!');
   console.log('📋 Instructions:');
   console.log('1. Create a new Static HTML Space on Hugging Face');
   console.log('2. Upload the contents of the dist/ directory to your Space');
