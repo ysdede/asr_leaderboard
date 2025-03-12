@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { DEFAULT_CONFIG } from '../config';
 
 const ConfigWidget = ({ config, onApplyConfig, isValidating }) => {
   const [draftConfig, setDraftConfig] = useState(config);
@@ -9,8 +8,13 @@ const ConfigWidget = ({ config, onApplyConfig, isValidating }) => {
   };
 
   const handleReset = () => {
-    setDraftConfig(DEFAULT_CONFIG);
-    onApplyConfig(DEFAULT_CONFIG);
+    const defaultConfig = {
+      owner: 'ysdede',
+      repo: 'asr_benchmark_store',
+      branch: 'main'
+    };
+    setDraftConfig(defaultConfig);
+    onApplyConfig(defaultConfig);
   };
 
   return (

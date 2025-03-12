@@ -7,10 +7,16 @@ import EmptyState from './EmptyState';
 import CSVParser from '../utils/CSVParser';
 import GitInfo from './GitInfo';
 import ProjectInfo from './ProjectInfo';
-import { DEFAULT_CONFIG } from '../config';
 import ConfigWidget from './ConfigWidget';
 
 const App = () => {
+  // Define default config directly in the component
+  const DEFAULT_CONFIG = {
+    owner: 'ysdede',
+    repo: 'asr_benchmark_store',
+    branch: 'main'
+  };
+
   const [metrics, setMetrics] = useState([]);
   const [datasets, setDatasets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,8 +34,13 @@ const App = () => {
   });
   const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
   const [config, setConfig] = useState(() => {
-    const savedConfig = localStorage.getItem('userConfig');
-    return savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIG;
+    try {
+      const savedConfig = localStorage.getItem('userConfig');
+      return savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIG;
+    } catch (e) {
+      console.error("Error loading config from localStorage:", e);
+      return DEFAULT_CONFIG;
+    }
   });
   const [isValidating, setIsValidating] = useState(false);
 
