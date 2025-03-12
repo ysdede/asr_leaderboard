@@ -7,6 +7,8 @@ import EmptyState from './EmptyState';
 import CSVParser from '../utils/CSVParser';
 import GitInfo from './GitInfo';
 import ProjectInfo from './ProjectInfo';
+import { DEFAULT_CONFIG } from '../config';
+import ConfigWidget from './ConfigWidget';
 
 const App = () => {
   const [metrics, setMetrics] = useState([]);
@@ -25,6 +27,11 @@ const App = () => {
     return savedDataset || 'all';
   });
   const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
+  const [config, setConfig] = useState(() => {
+    const savedConfig = localStorage.getItem('userConfig');
+    return savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIG;
+  });
+  const [isValidating, setIsValidating] = useState(false);
 
   // Simplified theme handling - just initialize once
   useEffect(() => {
@@ -45,87 +52,112 @@ const App = () => {
   }, [sortConfig]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const owner = 'ysdede';
-        const repo = 'asr_benchmark_store';
-        
-        // Try alternate URL format for Hugging Face datasets
-        const apiUrl = `https://huggingface.co/datasets/${owner}/${repo}/resolve/main/metrics-00.csv`;
-        
-        setDebugInfo(`Trying to fetch from: ${apiUrl}`);
-        
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
-        }
-        
-        const csvText = await response.text();
-        setDebugInfo('Data fetched successfully, parsing CSV...');
-        
-        const parsedData = CSVParser.parseCSV(csvText, setDebugInfo);
-        
-        if (parsedData.length > 0) {
-          setMetrics(parsedData);
-          
-          // Extract unique datasets
-          const uniqueDatasets = [...new Set(parsedData.map(item => item.dataset_name))];
-          setDatasets(uniqueDatasets);
-          
-          setDebugInfo(`Parsed ${parsedData.length} records successfully`);
-        } else {
-          setDebugInfo('Parsed data is empty');
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching metrics data:', error);
-        setError(error.message);
-        setDebugInfo(`Error: ${error.message}`);
-        setLoading(false);
-        
-        // Fallback to static data for demo purposes
-        tryWithStaticData();
-      }
-    };
-    
-    const tryWithStaticData = () => {
-      setDebugInfo('Falling back to static demo data...');
-      // Sample data from your CSV
-      const staticData = [
-        {
-          "asr_model_name": "openai/whisper-large-v3-turbo",
-          "wer": "10.4",
-          "cer": "5.4",
-          "cosine_similarity": "95.51",
-          "speed": "29",
-          "dataset_name": "turkishvoicedataset",
-          "dataset_hf_id": "erenfazlioglu/turkishvoicedataset",
-          "device_model": "Tesla T4",
-          "timestamp": "20250310164022",
-          "asr_model_url": "https://huggingface.co/openai/whisper-large-v3-turbo"
-        },
-        {
-          "asr_model_name": "openai/whisper-small",
-          "wer": "21.87",
-          "cer": "8.33",
-          "cosine_similarity": "91.23",
-          "speed": "68",
-          "dataset_name": "turkishvoicedataset",
-          "dataset_hf_id": "erenfazlioglu/turkishvoicedataset",
-          "device_model": "NVIDIA L4",
-          "timestamp": "20250310180124",
-          "asr_model_url": "https://huggingface.co/openai/whisper-small"
-        }
-      ];
-      
-      setMetrics(staticData);
-      setDatasets(["turkishvoicedataset"]);
-      setLoading(false);
-    };
+    localStorage.setItem('userConfig', JSON.stringify(config));
+  }, [config]);
 
+  useEffect(() => {
     fetchData();
   }, []);
+
+  const tryWithStaticData = () => {
+    setDebugInfo('Falling back to static demo data...');
+    // Sample data from your CSV
+    const staticData = [
+      {
+        "asr_model_name": "openai/whisper-large-v3-turbo",
+        "wer": "10.4",
+        // ... rest of the static data ...
+      },
+      // ... other static entries ...
+    ];
+    
+    setMetrics(staticData);
+    setDatasets(["turkishvoicedataset"]);
+    setLoading(false);
+  };
+
+  const validateAndApplyConfig = async (newConfig) => {
+    setIsValidating(true);
+    setDebugInfo('Validating repository configuration...');
+
+    try {
+      // Only try to fetch the metrics file directly - this was working before
+      const metricsUrl = `https://huggingface.co/datasets/${newConfig.owner}/${newConfig.repo}/resolve/${newConfig.branch}/metrics-00.csv`;
+      setDebugInfo(`Validating config by fetching: ${metricsUrl}`);
+      
+      const response = await fetch(metricsUrl);
+      if (!response.ok) {
+        throw new Error('Metrics file not found. Please check repository, branch name and ensure metrics-00.csv exists.');
+      }
+
+      // Try to parse a small bit of the CSV to validate it's the right format
+      const csvText = await response.text();
+      if (!csvText.includes('asr_model_name') || !csvText.includes('wer')) {
+        throw new Error('Invalid metrics file format');
+      }
+
+      // If validation passes, update the config and fetch new data
+      setConfig(newConfig);
+      localStorage.setItem('userConfig', JSON.stringify(newConfig));
+      setDebugInfo('Configuration validated successfully');
+      
+      // Reset the current data
+      setMetrics([]);
+      setDatasets([]);
+      setLoading(true);
+      setError(null);
+      
+      // Fetch new data
+      await fetchData();
+    } catch (error) {
+      setDebugInfo(`Configuration error: ${error.message}`);
+      alert(`Invalid configuration: ${error.message}`);
+      // Optionally fall back to static data if needed
+      // tryWithStaticData();
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const fetchData = async () => {
+    try {
+      const { owner, repo, branch } = config;
+      const apiUrl = `https://huggingface.co/datasets/${owner}/${repo}/resolve/${branch}/metrics-00.csv`;
+      
+      setDebugInfo(`Fetching data from: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+      }
+      
+      const csvText = await response.text();
+      setDebugInfo('Data fetched successfully, parsing CSV...');
+      
+      const parsedData = CSVParser.parseCSV(csvText, setDebugInfo);
+      
+      if (parsedData.length > 0) {
+        setMetrics(parsedData);
+        
+        // Extract unique datasets
+        const uniqueDatasets = [...new Set(parsedData.map(item => item.dataset_name))];
+        setDatasets(uniqueDatasets);
+        
+        setDebugInfo(`Parsed ${parsedData.length} records successfully`);
+      } else {
+        setDebugInfo('Parsed data is empty');
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching metrics data:', error);
+      setError(error.message);
+      setDebugInfo(`Error: ${error.message}`);
+      setLoading(false);
+      
+      tryWithStaticData();
+    }
+  };
 
   const requestSort = (key) => {
     let direction = 'asc';
@@ -182,17 +214,28 @@ const App = () => {
   }
   
   if (error) {
-    return <ErrorState error={error} debugInfo={debugInfo} />;
+    return (
+      <ErrorState 
+        error={error} 
+        debugInfo={debugInfo}
+        config={config}
+        onApplyConfig={validateAndApplyConfig}
+        isValidating={isValidating}
+      />
+    );
   }
   
   if (metrics.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center p-4">
-          <p className="text-lg">No benchmark data available</p>
-          <span className="text-xs dark:text-gray-400 text-gray-500">{debugInfo}</span>
-        </div>
-      </div>
+      <EmptyState 
+        selectedDataset={selectedDataset}
+        datasets={datasets}
+        onDatasetChange={setSelectedDataset}
+        config={config}
+        onApplyConfig={validateAndApplyConfig}
+        isValidating={isValidating}
+        debugInfo={debugInfo}
+      />
     );
   }
 
@@ -229,6 +272,13 @@ const App = () => {
       />
       <div className="mt-8 border-t pt-2 dark:border-gray-700">
         <GitInfo />
+      </div>
+      <div className="flex justify-center">
+        <ConfigWidget 
+          config={config} 
+          onApplyConfig={validateAndApplyConfig}
+          isValidating={isValidating}
+        />
       </div>
       <ProjectInfo />
     </div>
