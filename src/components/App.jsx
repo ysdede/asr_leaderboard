@@ -32,6 +32,15 @@ const App = () => {
     return savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIG;
   });
   const [isValidating, setIsValidating] = useState(false);
+  const [configLoaded, setConfigLoaded] = useState(false);
+  const [configSource, setConfigSource] = useState('initializing');
+
+  const FALLBACK_CONFIG = {
+    owner: 'ysdede',
+    repo: 'asr_benchmark_store',
+    branch: 'main',
+    availableBranches: ['main']
+  };
 
   // Simplified theme handling - just initialize once
   useEffect(() => {
@@ -55,9 +64,99 @@ const App = () => {
     localStorage.setItem('userConfig', JSON.stringify(config));
   }, [config]);
 
+  // Load config with proper priority: localStorage first, then config.json
   useEffect(() => {
-    fetchData();
+    const loadConfig = async () => {
+      try {
+        // First try to get from localStorage
+        const savedConfig = localStorage.getItem('userConfig');
+        if (savedConfig) {
+          try {
+            const parsedConfig = JSON.parse(savedConfig);
+            // Validate the saved config has all required fields
+            if (parsedConfig.owner && parsedConfig.repo && parsedConfig.branch) {
+              setConfig(parsedConfig);
+              setConfigSource('localStorage');
+              console.log('📋 Configuration loaded from localStorage:', parsedConfig);
+              setConfigLoaded(true);
+              return;
+            } else {
+              console.warn('⚠️ Invalid config in localStorage, missing required fields');
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Error parsing localStorage config:', parseError);
+          }
+        } else {
+          console.log('No configuration found in localStorage, checking config.json...');
+        }
+
+        // If not in localStorage or invalid, try to load from config.json
+        try {
+          // Add cache-busting query parameter
+          const cacheBuster = Math.random().toString(36).substring(2) + Date.now();
+          const configUrl = `/config.json?nocache=${cacheBuster}`;
+          
+          console.log(`Fetching config from: ${configUrl}`);
+          
+          const response = await fetch(configUrl, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
+            }
+          });
+          
+          if (response.ok) {
+            const fileConfig = await response.json();
+            console.log('📄 Raw configuration loaded from config.json:', fileConfig);
+            
+            // Validate the config has the required fields
+            if (!fileConfig.owner || !fileConfig.repo || !fileConfig.branch) {
+              throw new Error('Invalid config format: missing required fields');
+            }
+            
+            setConfig(fileConfig);
+            setConfigSource('config.json');
+            
+            // Save to localStorage for future visits
+            localStorage.setItem('userConfig', JSON.stringify(fileConfig));
+            
+            console.log('✅ Configuration applied from config.json and saved to localStorage:', fileConfig);
+          } else {
+            throw new Error(`Could not load config.json: ${response.status} ${response.statusText}`);
+          }
+        } catch (fileError) {
+          console.warn('⚠️ Error loading config.json:', fileError);
+          setConfigSource('fallback');
+          console.log('⚙️ Using fallback configuration:', FALLBACK_CONFIG);
+          
+          // Save fallback to localStorage
+          localStorage.setItem('userConfig', JSON.stringify(FALLBACK_CONFIG));
+        }
+      } catch (error) {
+        console.error('❌ Error in config loading process:', error);
+        setConfigSource('fallback');
+        console.log('⚙️ Using fallback configuration:', FALLBACK_CONFIG);
+        
+        // Save fallback to localStorage
+        localStorage.setItem('userConfig', JSON.stringify(FALLBACK_CONFIG));
+      } finally {
+        setConfigLoaded(true);
+      }
+    };
+
+    loadConfig();
   }, []);
+
+  // Only fetch data after config is loaded
+  useEffect(() => {
+    if (configLoaded) {
+      console.log(`🚀 Starting data fetch with configuration from ${configSource}`);
+      fetchData();
+    }
+  }, [configLoaded]);
 
   const tryWithStaticData = () => {
     setDebugInfo('Falling back to static demo data...');
@@ -78,10 +177,23 @@ const App = () => {
 
   const validateAndApplyConfig = async (newConfig) => {
     setIsValidating(true);
-    setDebugInfo('Validating repository configuration...');
+    
+    // If only the branch changed and it's in the availableBranches list, we can skip some validation
+    const onlyBranchChanged = 
+      newConfig.owner === config.owner && 
+      newConfig.repo === config.repo && 
+      newConfig.branch !== config.branch &&
+      config.availableBranches && 
+      config.availableBranches.includes(newConfig.branch);
+    
+    if (onlyBranchChanged) {
+      setDebugInfo(`Switching to branch: ${newConfig.branch}`);
+    } else {
+      setDebugInfo('Validating repository configuration...');
+    }
 
     try {
-      // Only try to fetch the metrics file directly - this was working before
+      // Validate by fetching the metrics file
       const metricsUrl = `https://huggingface.co/datasets/${newConfig.owner}/${newConfig.repo}/resolve/${newConfig.branch}/metrics-00.csv`;
       setDebugInfo(`Validating config by fetching: ${metricsUrl}`);
       
@@ -98,8 +210,13 @@ const App = () => {
 
       // If validation passes, update the config and fetch new data
       setConfig(newConfig);
+      setConfigSource(onlyBranchChanged ? 'branch change' : 'user input');
+      
+      // Save to localStorage
       localStorage.setItem('userConfig', JSON.stringify(newConfig));
-      setDebugInfo('Configuration validated successfully');
+      
+      console.log(`🔄 Configuration updated: ${onlyBranchChanged ? 'branch changed' : 'full config changed'}`, newConfig);
+      setDebugInfo(onlyBranchChanged ? `Switched to branch: ${newConfig.branch}` : 'Configuration validated successfully and saved');
       
       // Reset the current data
       setMetrics([]);
@@ -107,13 +224,25 @@ const App = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch new data
-      await fetchData();
+      // Parse the CSV data we already fetched for validation
+      const parsedData = CSVParser.parseCSV(csvText, setDebugInfo);
+      
+      if (parsedData.length > 0) {
+        setMetrics(parsedData);
+        
+        // Extract unique datasets
+        const uniqueDatasets = [...new Set(parsedData.map(item => item.dataset_name))];
+        setDatasets(uniqueDatasets);
+        
+        setDebugInfo(`Parsed ${parsedData.length} records successfully from branch ${newConfig.branch}`);
+      } else {
+        setDebugInfo(`Branch ${newConfig.branch} has empty data`);
+      }
+      
+      setLoading(false);
     } catch (error) {
       setDebugInfo(`Configuration error: ${error.message}`);
       alert(`Invalid configuration: ${error.message}`);
-      // Optionally fall back to static data if needed
-      // tryWithStaticData();
     } finally {
       setIsValidating(false);
     }
