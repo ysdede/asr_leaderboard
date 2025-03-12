@@ -9,14 +9,14 @@ import GitInfo from './GitInfo';
 import ProjectInfo from './ProjectInfo';
 import ConfigWidget from './ConfigWidget';
 
-const App = () => {
-  // Define default config directly in the component
-  const DEFAULT_CONFIG = {
-    owner: 'ysdede',
-    repo: 'asr_benchmark_store',
-    branch: 'main'
-  };
+// Default fallback config in case everything else fails
+const FALLBACK_CONFIG = {
+  owner: 'ysdede',
+  repo: 'asr_benchmark_store',
+  branch: 'main'
+};
 
+const App = () => {
   const [metrics, setMetrics] = useState([]);
   const [datasets, setDatasets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,16 +33,10 @@ const App = () => {
     return savedDataset || 'all';
   });
   const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
-  const [config, setConfig] = useState(() => {
-    try {
-      const savedConfig = localStorage.getItem('userConfig');
-      return savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIG;
-    } catch (e) {
-      console.error("Error loading config from localStorage:", e);
-      return DEFAULT_CONFIG;
-    }
-  });
+  const [config, setConfig] = useState(FALLBACK_CONFIG); // Start with fallback
   const [isValidating, setIsValidating] = useState(false);
+  const [configLoaded, setConfigLoaded] = useState(false);
+  const [configSource, setConfigSource] = useState('initializing');
 
   // Simplified theme handling - just initialize once
   useEffect(() => {
@@ -66,9 +60,75 @@ const App = () => {
     localStorage.setItem('userConfig', JSON.stringify(config));
   }, [config]);
 
+  // Load config from localStorage or config.json
   useEffect(() => {
-    fetchData();
+    const loadConfig = async () => {
+      try {
+        // First try to get from localStorage
+        const savedConfig = localStorage.getItem('userConfig');
+        if (savedConfig) {
+          try {
+            const parsedConfig = JSON.parse(savedConfig);
+            setConfig(parsedConfig);
+            setConfigSource('localStorage');
+            console.log('📋 Configuration loaded from localStorage:', parsedConfig);
+            setConfigLoaded(true);
+            return;
+          } catch (parseError) {
+            console.warn('⚠️ Error parsing localStorage config:', parseError);
+            // Continue to try other sources
+          }
+        }
+
+        // If not in localStorage or parsing failed, try to load from config.json
+        try {
+          console.log('🔍 Attempting to load config from config.json...');
+          const response = await fetch('/config.json');
+          if (response.ok) {
+            const fileConfig = await response.json();
+            setConfig(fileConfig);
+            setConfigSource('config.json');
+            // Also save to localStorage for future use
+            localStorage.setItem('userConfig', JSON.stringify(fileConfig));
+            console.log('📄 Configuration loaded from config.json:', fileConfig);
+          } else {
+            console.warn(`⚠️ Could not load config.json: ${response.status} ${response.statusText}`);
+            setConfigSource('fallback');
+            console.log('⚙️ Using fallback configuration:', FALLBACK_CONFIG);
+          }
+        } catch (fileError) {
+          console.warn('⚠️ Error loading config.json:', fileError);
+          setConfigSource('fallback');
+          console.log('⚙️ Using fallback configuration:', FALLBACK_CONFIG);
+          // Use fallback config (already set as initial state)
+        }
+      } catch (error) {
+        console.error('❌ Error in config loading process:', error);
+        setConfigSource('fallback');
+        console.log('⚙️ Using fallback configuration:', FALLBACK_CONFIG);
+        // Use fallback config (already set as initial state)
+      } finally {
+        setConfigLoaded(true);
+      }
+    };
+
+    loadConfig();
   }, []);
+
+  // Only fetch data after config is loaded
+  useEffect(() => {
+    if (configLoaded) {
+      console.log(`🚀 Starting data fetch with configuration from ${configSource}`);
+      fetchData();
+    }
+  }, [configLoaded]);
+
+  // Update debug info when config changes
+  useEffect(() => {
+    if (configLoaded) {
+      setDebugInfo(prev => `${prev}\nUsing config from: ${configSource}`);
+    }
+  }, [configLoaded, configSource]);
 
   const tryWithStaticData = () => {
     setDebugInfo('Falling back to static demo data...');
@@ -109,6 +169,8 @@ const App = () => {
 
       // If validation passes, update the config and fetch new data
       setConfig(newConfig);
+      setConfigSource('user input');
+      console.log('🔄 Configuration updated by user:', newConfig);
       localStorage.setItem('userConfig', JSON.stringify(newConfig));
       setDebugInfo('Configuration validated successfully');
       
