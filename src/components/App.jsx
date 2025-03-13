@@ -16,20 +16,52 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState(() => {
-    // Try to get saved sort config from localStorage
-    const savedSortConfig = localStorage.getItem('sortConfig');
-    return savedSortConfig ? JSON.parse(savedSortConfig) : { key: 'wer', direction: 'asc' };
+    try {
+      const savedSortConfig = localStorage.getItem('sortConfig');
+      return savedSortConfig ? JSON.parse(savedSortConfig) : { key: 'wer', direction: 'asc' };
+    } catch (error) {
+      console.warn('Error loading sortConfig from localStorage:', error);
+      return { key: 'wer', direction: 'asc' }; // Fallback to default
+    }
   });
   const [debugInfo, setDebugInfo] = useState('');
   const [selectedDataset, setSelectedDataset] = useState(() => {
-    // Try to get saved dataset selection from localStorage
-    const savedDataset = localStorage.getItem('selectedDataset');
-    return savedDataset || 'all';
+    try {
+      const savedDataset = localStorage.getItem('selectedDataset');
+      return savedDataset || 'all';
+    } catch (error) {
+      console.warn('Error loading selectedDataset from localStorage:', error);
+      return 'all'; // Fallback to default
+    }
   });
-  const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
+  const [darkMode, setDarkMode] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        // Apply the saved theme to document
+        document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+        return savedTheme === 'dark';
+      }
+      // If no saved theme, use system preference
+      return document.documentElement.classList.contains('dark');
+    } catch (error) {
+      console.warn('Error loading theme from localStorage:', error);
+      return document.documentElement.classList.contains('dark');
+    }
+  });
   const [config, setConfig] = useState(() => {
-    const savedConfig = localStorage.getItem('userConfig');
-    return savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIG;
+    try {
+      const savedConfig = localStorage.getItem('userConfig');
+      const parsedConfig = savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIG;
+      // Validate the config has the required fields
+      if (!parsedConfig.owner || !parsedConfig.repo || !parsedConfig.branch) {
+        throw new Error('Invalid config format: missing required fields');
+      }
+      return parsedConfig;
+    } catch (error) {
+      console.warn('Error loading userConfig from localStorage:', error);
+      return DEFAULT_CONFIG; // Fallback to default
+    }
   });
   const [isValidating, setIsValidating] = useState(false);
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -41,14 +73,6 @@ const App = () => {
     branch: 'main',
     availableBranches: ['main']
   };
-
-  // Simplified theme handling - just initialize once
-  useEffect(() => {
-    // Set initial dark mode state based on document class
-    const isDark = document.documentElement.classList.contains('dark');
-    setDarkMode(isDark);
-    console.log("React component initialized with theme:", isDark ? "DARK" : "LIGHT");
-  }, []);
 
   // Save selected dataset to localStorage when it changes
   useEffect(() => {
@@ -331,10 +355,17 @@ const App = () => {
   const toggleTheme = () => {
     const newDarkMode = !darkMode;
     setDarkMode(newDarkMode);
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    try {
+      // Save theme preference to localStorage
+      localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
+      // Update document class
+      if (newDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (error) {
+      console.warn('Error saving theme to localStorage:', error);
     }
   };
 
