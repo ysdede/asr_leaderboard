@@ -2,7 +2,7 @@ import React from 'react';
 
 const DatasetFilter = ({ selectedDataset, datasets, onChange }) => {
   return (
-    <div className="mb-4 dark:bg-dark-100 bg-white p-3 rounded-lg shadow-md">
+    <div className="mb-4 dark:bg-gray-900 bg-white p-3 rounded-lg shadow-md">
       <label htmlFor="dataset-filter" className="mr-2 text-sm font-medium dark:text-gray-300 text-gray-700">
         Filter by Dataset:
       </label>

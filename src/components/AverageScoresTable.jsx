@@ -135,14 +135,14 @@ const AverageScoresTable = ({
   }, [averageMetrics, sortConfig]);
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold dark:text-gray-100 text-gray-800">ASR Models Average Performance</h1>
+    <div className="max-w-7xl mx-auto p-2 sm:p-4 w-full">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h1 className="text-lg sm:text-xl font-bold dark:text-gray-100 text-gray-800">ASR Models Average Performance</h1>
         <ThemeToggle darkMode={darkMode} toggleTheme={toggleTheme} />
       </div>
       
       {/* Dataset Selector */}
-      <div className="mb-4 dark:bg-dark-100 bg-white rounded-lg shadow-md p-3">
+      <div className="mb-4 dark:bg-gray-900 bg-white rounded-lg shadow-md p-3">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <span className="text-xs font-medium dark:text-gray-300 text-gray-700">
             Select datasets:
@@ -173,7 +173,7 @@ const AverageScoresTable = ({
                 type="checkbox"
                 checked={selectedDatasets.includes(dataset) || selectedDatasets.length === 0}
                 onChange={() => toggleDataset(dataset)}
-                className="form-checkbox h-3 w-3 text-blue-600 transition duration-150 ease-in-out"
+                className="h-3 w-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               />
               <span className="ml-1 text-xs dark:text-gray-300 text-gray-700">{dataset}</span>
             </label>
@@ -188,7 +188,7 @@ const AverageScoresTable = ({
       </div>
       
       {/* Average Scores Table */}
-      <div className="overflow-x-auto dark:bg-dark-100 bg-white rounded-lg shadow-md">
+      <div className="overflow-x-auto dark:bg-gray-900 bg-white rounded-lg shadow-md -mx-2 sm:mx-0">
         <table className="min-w-full divide-y dark:divide-gray-700 divide-gray-200">
           <thead className="dark:bg-gray-800 bg-gray-50">
             <tr>
@@ -257,7 +257,7 @@ const AverageScoresTable = ({
             {sortedAverageMetrics.map((item, index) => (
               <tr 
                 key={index} 
-                className={index % 2 === 0 ? 'dark:bg-dark-100 bg-white' : 'dark:bg-gray-800 bg-gray-50'}
+                className={index % 2 === 0 ? 'dark:bg-gray-900 bg-white' : 'dark:bg-gray-800 bg-gray-50'}
               >
                 <td className="py-2 px-3 text-xs whitespace-nowrap">
                   <a 
@@ -307,7 +307,7 @@ const AverageScoresTable = ({
         </table>
       </div>
       
-      <div className="mt-4 text-xs dark:text-gray-400 text-gray-600 dark:bg-dark-100 bg-white p-3 rounded-lg shadow-md">
+      <div className="mt-4 text-xs dark:text-gray-400 text-gray-600 dark:bg-gray-900 bg-white p-3 rounded-lg shadow-md">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div>
             <p><span className="font-semibold">Avg WER</span>: Average Word Error Rate (lower is better)</p>

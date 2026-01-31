@@ -180,12 +180,21 @@ tr {
   box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.5);
 }
 
-/* Global link styling in dark mode */
-.dark a {
-  color: #a3c9f1; /* Standard light blue color for all links */
+/* Global link styling */
+a {
+  color: #2563eb; /* Blue-600 for light mode */
+  transition: color 0.2s ease;
 }
 
-/* Ensure links have a distinct hover state */
+a:hover {
+  color: #1d4ed8; /* Blue-700 for light mode hover */
+}
+
+/* Dark mode link styling */
+.dark a {
+  color: #60a5fa; /* Blue-400 for dark mode - better contrast */
+}
+
 .dark a:hover {
-  color: #d0e7ff; /* Even lighter blue on hover */
+  color: #93c5fd; /* Blue-300 for dark mode hover */
 }

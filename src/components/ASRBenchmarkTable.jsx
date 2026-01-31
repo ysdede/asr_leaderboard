@@ -3,9 +3,9 @@ import DatasetFilter from './DatasetFilter';
 
 const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, selectedDataset, datasets, onDatasetChange }) => {
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold dark:text-gray-100 text-gray-800">ASR Benchmark Comparison</h1>
+    <div className="max-w-7xl mx-auto p-2 sm:p-4 w-full">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h1 className="text-lg sm:text-xl font-bold dark:text-gray-100 text-gray-800">ASR Benchmark Comparison</h1>
       </div>
       
       <DatasetFilter 
@@ -14,15 +14,15 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
         onChange={onDatasetChange} 
       />
       
-      <div className="overflow-x-auto dark:bg-dark-100 bg-white rounded-lg shadow-md">
+      <div className="overflow-x-auto dark:bg-gray-900 bg-white rounded-lg shadow-md -mx-2 sm:mx-0">
         <table className="min-w-full divide-y dark:divide-gray-700 divide-gray-200">
           <thead className="dark:bg-gray-800 bg-gray-50">
             <tr>
-              <th className="py-2 px-3 text-left text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
+              <th className="py-2 px-1 sm:px-3 text-left text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
                 Model
               </th>
               <th 
-                className="py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider cursor-pointer dark:hover:bg-gray-700 hover:bg-gray-100 whitespace-nowrap"
+                className="py-2 px-1 sm:px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider cursor-pointer dark:hover:bg-gray-700 hover:bg-gray-100 whitespace-nowrap"
                 onClick={() => requestSort('wer')}
               >
                 <div className="flex items-center justify-center">
@@ -68,10 +68,10 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
               <th className="py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
                 Dataset
               </th>
-              <th className="py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
+              <th className="hidden sm:table-cell py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
                 Backend
               </th>
-              <th className="py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
+              <th className="hidden sm:table-cell py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
                 Device
               </th>
               <th className="py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -83,9 +83,9 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
             {metrics.map((item, index) => (
               <tr 
                 key={index} 
-                className={index % 2 === 0 ? 'dark:bg-dark-100 bg-white' : 'dark:bg-gray-800 bg-gray-50'}
+                className={index % 2 === 0 ? 'dark:bg-gray-900 bg-white' : 'dark:bg-gray-800 bg-gray-50'}
               >
-                <td className="py-2 px-3 text-xs whitespace-nowrap">
+                <td className="py-2 px-1 sm:px-3 text-xs whitespace-nowrap">
                   <a 
                     href={item.asr_model_url} 
                     target="_blank" 
@@ -95,7 +95,7 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
                     {item.asr_model_name}
                   </a>
                 </td>
-                <td className="py-2 px-2 text-xs text-center whitespace-nowrap">
+                <td className="py-2 px-1 sm:px-2 text-xs text-center whitespace-nowrap">
                   {formatNumber(item.wer)}%
                 </td>
                 <td className="py-2 px-2 text-xs text-center whitespace-nowrap">
@@ -117,10 +117,10 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
                     {item.dataset_name}
                   </a>
                 </td>
-                <td className="py-2 px-2 text-xs text-center whitespace-nowrap">
+                <td className="hidden sm:table-cell py-2 px-2 text-xs text-center whitespace-nowrap">
                   {item.backend || '-'}
                 </td>
-                <td className="py-2 px-2 text-xs text-center whitespace-nowrap">
+                <td className="hidden sm:table-cell py-2 px-2 text-xs text-center whitespace-nowrap">
                   {item.device || '-'}
                 </td>
                 <td className="py-2 px-2 text-xs text-center whitespace-nowrap">
@@ -132,7 +132,7 @@ const ASRBenchmarkTable = ({ metrics, sortConfig, requestSort, formatNumber, sel
         </table>
       </div>
       
-      <div className="mt-4 text-xs dark:text-gray-400 text-gray-600 dark:bg-dark-100 bg-white p-3 rounded-lg shadow-md">
+      <div className="mt-4 text-xs dark:text-gray-400 text-gray-600 dark:bg-gray-900 bg-white p-3 rounded-lg shadow-md">
         <p className="text-xs dark:text-gray-500 text-gray-500">
           Last updated: {metrics.length > 0 ? 
             (() => {

@@ -2,11 +2,13 @@ import React from 'react';
 
 const LoadingState = ({ debugInfo }) => {
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-center p-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-lg">Loading benchmark data...</p>
-        <span className="text-xs dark:text-gray-400 text-gray-500">{debugInfo}</span>
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="text-center max-w-md">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400 mx-auto mb-4"></div>
+        <p className="text-lg dark:text-gray-100 text-gray-900 mb-2">Loading benchmark data...</p>
+        {debugInfo && (
+          <span className="text-xs dark:text-gray-400 text-gray-500 block break-words">{debugInfo}</span>
+        )}
       </div>
     </div>
   );
