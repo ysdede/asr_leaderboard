@@ -4,21 +4,18 @@
   "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
-    "preview": "vinxi preview"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@solidjs/meta": "^0.29.4",
-    "@solidjs/router": "^0.15.3",
-    "@solidjs/start": "^1.1.5",
     "solid-js": "^1.9.5"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
-    "typescript": "^5.7.0",
-    "vinxi": "^0.5.3"
+    "vite": "^5.4.0",
+    "vite-plugin-solid": "^2.10.0"
   }
 }
