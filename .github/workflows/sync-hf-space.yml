@@ -5,9 +5,10 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'app.config.*'
+      - 'index.html'
       - 'package.json'
       - 'package-lock.json'
+      - 'vite.config.*'
       - 'tailwind.config.*'
       - 'postcss.config.*'
       - '.github/workflows/sync-hf-space.yml'
@@ -29,14 +30,7 @@ jobs:
 
       - name: Prepare HF export
         run: |
-          CSV_URL="https://huggingface.co/datasets/ysdede/asr_benchmark_store/resolve/dev/metrics-00.csv"
-          CSV_JSON=$(curl -sSfL "$CSV_URL" | python3 -c "
-          import csv, json, sys
-          reader = csv.DictReader(sys.stdin)
-          print(json.dumps([row for row in reader]))
-          " 2>/dev/null || echo '[]')
           mkdir -p hf_export
-          sed -i "s|</body>|<script>window.__LEADERBOARD_DATA__=${CSV_JSON};</script></body>|" dist/index.html
           cp -r dist/* hf_export/
           cat > hf_export/README.md << 'EOF'
           ---

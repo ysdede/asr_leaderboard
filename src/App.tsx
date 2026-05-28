@@ -1,48 +1,41 @@
-/// <reference types="vite/client" />
-import { createSignal, Show } from 'solid-js'
+import { createSignal, Show, onMount } from 'solid-js'
 import type { MetricRow } from './utils/csv'
 import { parseCSV } from './utils/csv'
 import Leaderboard from './components/Leaderboard'
 import DataSourceWidget, { buildCsvUrl, defaultConfig, saveConfig, type DataSourceConfig } from './components/DataSourceWidget'
 
-declare global { interface Window { __LEADERBOARD_DATA__?: MetricRow[] } }
-
-function loadInitial(): MetricRow[] | null {
-  if (window.__LEADERBOARD_DATA__?.length) return window.__LEADERBOARD_DATA__!
-  return null
-}
+let fetchCsv: typeof import('./utils/csv')['parseCSV'] | null = null
 
 export default function App() {
-  const initial = loadInitial()
-  const [metrics, setMetrics] = createSignal<MetricRow[] | null>(initial)
-  const [ready, setReady] = createSignal(initial !== null)
+  const [metrics, setMetrics] = createSignal<MetricRow[] | null>(null)
   const [error, setError] = createSignal<string | null>(null)
+  const [ready, setReady] = createSignal(false)
   const [fetching, setFetching] = createSignal(false)
   const [source, setSource] = createSignal<DataSourceConfig>(defaultConfig())
 
-  if (!initial) {
-    fetch(buildCsvUrl(defaultConfig()))
-      .then(r => { if (!r.ok) throw Error(`HTTP ${r.status}`); return r.text() })
-      .then(csv => { setMetrics(parseCSV(csv)); setReady(true) })
-      .catch(e => { setError(e.message); setReady(true) })
+  async function load(url: string) {
+    const r = await fetch(url)
+    if (!r.ok) throw Error(`HTTP ${r.status}`)
+    return parseCSV(await r.text())
   }
+
+  onMount(() => {
+    load(buildCsvUrl(defaultConfig()))
+      .then(data => { setMetrics(data); setReady(true) })
+      .catch(e => { setError(e.message); setReady(true) })
+  })
 
   async function onChange(config: DataSourceConfig) {
     setError(null); setFetching(true); setSource(config); saveConfig(config)
-    try {
-      const r = await fetch(buildCsvUrl(config))
-      if (!r.ok) throw Error(`HTTP ${r.status}`)
-      setMetrics(parseCSV(await r.text()))
-    } catch (e: any) { setError(e.message); setMetrics(null) }
+    try { setMetrics(await load(buildCsvUrl(config))) }
+    catch (e: any) { setError(e.message); setMetrics(null) }
     finally { setFetching(false) }
   }
-
-  const data = () => metrics()
 
   return (
     <main class="flex min-h-screen flex-col p-2 sm:p-4">
       <Show
-        when={ready() && data() && data()!.length > 0}
+        when={ready() && metrics() && metrics()!.length > 0}
         fallback={
           <div class="flex items-center justify-center h-screen">
             <div class="text-center p-4">
@@ -66,7 +59,7 @@ export default function App() {
             </div>
           </div>
         </Show>
-        <Leaderboard metrics={data()!} />
+        <Leaderboard metrics={metrics()!} />
       </Show>
     </main>
   )
