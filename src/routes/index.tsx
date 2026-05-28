@@ -1,4 +1,4 @@
-import { createSignal, Show } from 'solid-js'
+import { createSignal, Show, onMount } from 'solid-js'
 import type { MetricRow } from '../utils/csv'
 import Leaderboard from '../components/Leaderboard'
 import DataSourceWidget, {
@@ -13,39 +13,52 @@ declare global {
   interface Window { __LEADERBOARD_DATA__?: MetricRow[] }
 }
 
-async function fetchMetrics(url: string): Promise<MetricRow[]> {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`)
-  const { parseCSV } = await import('../utils/csv')
-  return parseCSV(await res.text())
-}
-
 export default function Home() {
-  const initial = (typeof window !== 'undefined' && window.__LEADERBOARD_DATA__?.length)
-    ? window.__LEADERBOARD_DATA__
-    : null
-
-  const [metrics, setMetrics] = createSignal<MetricRow[] | null>(initial)
-  const [loaded, setLoaded] = createSignal(initial !== null)
+  const [metrics, setMetrics] = createSignal<MetricRow[] | null>(null)
+  const [loaded, setLoaded] = createSignal(false)
   const [clientError, setClientError] = createSignal<string | null>(null)
   const [isFetching, setIsFetching] = createSignal(false)
   const [currentSource, setCurrentSource] = createSignal<DataSourceConfig>(defaultConfig())
 
-  // SSR fallback: if no embedded data, fetch client-side
-  if (!initial && typeof window !== 'undefined') {
-    fetchMetrics(buildCsvUrl(defaultConfig()))
-      .then((data) => { setMetrics(data); setLoaded(true) })
-      .catch((e) => { setClientError(e.message); setLoaded(true) })
-  }
+  onMount(async () => {
+    // Prefer embedded CI data (instant), fallback to client fetch (dev mode)
+    if (typeof window !== 'undefined' && window.__LEADERBOARD_DATA__?.length) {
+      setMetrics(window.__LEADERBOARD_DATA__!)
+      setLoaded(true)
+      return
+    }
 
-  function handleSourceChange(config: DataSourceConfig) {
+    // Dev / fallback: fetch client-side
+    try {
+      const { parseCSV } = await import('../utils/csv')
+      const res = await fetch(buildCsvUrl(defaultConfig()))
+      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`)
+      const data = parseCSV(await res.text())
+      setMetrics(data)
+    } catch (e: any) {
+      setClientError(e.message)
+    } finally {
+      setLoaded(true)
+    }
+  })
+
+  async function handleSourceChange(config: DataSourceConfig) {
     setClientError(null)
     setIsFetching(true)
     setCurrentSource(config)
     saveConfig(config)
-    fetchMetrics(buildCsvUrl(config))
-      .then((data) => { setMetrics(data); setLoaded(true); setIsFetching(false) })
-      .catch((e) => { setClientError(e.message); setMetrics(null); setIsFetching(false) })
+    try {
+      const { parseCSV } = await import('../utils/csv')
+      const res = await fetch(buildCsvUrl(config))
+      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`)
+      const data = parseCSV(await res.text())
+      setMetrics(data)
+    } catch (e: any) {
+      setClientError(e.message)
+      setMetrics(null)
+    } finally {
+      setIsFetching(false)
+    }
   }
 
   return (
@@ -83,7 +96,6 @@ export default function Home() {
       >
         <div>
           <DataSourceWidget currentSource={currentSource()} isFetching={isFetching()} onFetch={handleSourceChange} />
-
           <Show when={isFetching()}>
             <div class="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
               <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl text-center">
@@ -92,7 +104,6 @@ export default function Home() {
               </div>
             </div>
           </Show>
-
           <Leaderboard metrics={metrics()!} />
         </div>
       </Show>
