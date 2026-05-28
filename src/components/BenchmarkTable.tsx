@@ -3,30 +3,34 @@ import type { MetricRow } from '../utils/csv'
 import { formatNumber, friendlyDatasetName } from '../utils/csv'
 import SortHeader from './SortHeader'
 
-interface DetailTableProps {
+interface BenchmarkTableProps {
   metrics: MetricRow[]
 }
 
-export default function DetailTable(props: DetailTableProps) {
-  const [sortKey, setSortKey] = createSignal('wer')
-  const [sortDir, setSortDir] = createSignal('asc')
-  const [selectedDataset, setSelectedDataset] = createSignal('all')
-
+export default function BenchmarkTable(props: BenchmarkTableProps) {
   const datasets = createMemo(() => {
     const set = new Set(props.metrics.map((m) => m.dataset_name))
     return Array.from(set).sort()
   })
+
+  const [sortKey, setSortKey] = createSignal('wer')
+  const [sortDir, setSortDir] = createSignal('asc')
+  const [selectedDataset, setSelectedDataset] = createSignal('all')
 
   function handleSort(key: string) {
     if (sortKey() === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     } else {
       setSortKey(key)
-      // Default direction based on metric
       if (key === 'wer' || key === 'cer') setSortDir('asc')
       else setSortDir('desc')
     }
   }
+
+  const models = createMemo(() => {
+    const set = new Set(props.metrics.map((m) => m.asr_model_name))
+    return Array.from(set).sort()
+  })
 
   const sortedMetrics = createMemo(() => {
     let items = props.metrics
@@ -48,9 +52,9 @@ export default function DetailTable(props: DetailTableProps) {
 
   return (
     <div class="max-w-7xl mx-auto p-2 sm:p-4 w-full">
-      <h2 class="text-lg sm:text-xl font-bold dark:text-gray-100 text-gray-800 mb-4">
-        ASR Benchmark Comparison
-      </h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+        {models().length} models compared across {datasets().length} datasets
+      </p>
 
       {/* Dataset filter */}
       <div class="mb-4">
@@ -63,9 +67,13 @@ export default function DetailTable(props: DetailTableProps) {
           onChange={(e) => setSelectedDataset(e.currentTarget.value)}
           class="text-xs border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 border-gray-300 rounded px-2 py-1 bg-white"
         >
-          <option value="all">All Datasets</option>
+          <option value="all">All Datasets ({props.metrics.length} results)</option>
           <For each={datasets()}>
-            {(ds) => <option value={ds}>{friendlyDatasetName(ds)}</option>}
+            {(ds) => (
+              <option value={ds}>
+                {friendlyDatasetName(ds)} ({props.metrics.filter((m) => m.dataset_name === ds).length})
+              </option>
+            )}
           </For>
         </select>
       </div>
@@ -85,12 +93,6 @@ export default function DetailTable(props: DetailTableProps) {
                 Dataset
               </th>
               <th class="hidden sm:table-cell py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                Backend
-              </th>
-              <th class="hidden sm:table-cell py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                Device
-              </th>
-              <th class="py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
                 Hardware
               </th>
             </tr>
@@ -132,12 +134,6 @@ export default function DetailTable(props: DetailTableProps) {
                     </a>
                   </td>
                   <td class="hidden sm:table-cell py-2 px-2 text-xs text-center whitespace-nowrap">
-                    {item.backend || '-'}
-                  </td>
-                  <td class="hidden sm:table-cell py-2 px-2 text-xs text-center whitespace-nowrap">
-                    {item.device || '-'}
-                  </td>
-                  <td class="py-2 px-2 text-xs text-center whitespace-nowrap">
                     {item.device_model || '-'}
                   </td>
                 </tr>

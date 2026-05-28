@@ -1,7 +1,7 @@
 import { Title, Meta } from '@solidjs/meta'
 import type { MetricRow } from '../utils/csv'
-import AverageTable from './AverageTable'
-import DetailTable from './DetailTable'
+import BenchmarkTable from './BenchmarkTable'
+import ThemeToggle from './ThemeToggle'
 import Footer from './Footer'
 
 interface LeaderboardProps {
@@ -22,8 +22,21 @@ export default function Leaderboard(props: LeaderboardProps) {
       <Meta name="twitter:description" content="Compare Turkish ASR model performance benchmarks across multiple datasets." />
 
       <div class="flex flex-col space-y-8 pb-4">
-        <AverageTable metrics={props.metrics} />
-        <DetailTable metrics={props.metrics} />
+        <div class="max-w-7xl mx-auto p-2 sm:p-4 w-full">
+          <div class="flex justify-between items-center mb-4 sm:mb-6">
+            <div>
+              <h1 class="text-lg sm:text-xl font-bold dark:text-gray-100 text-gray-800">
+                Turkish ASR Leaderboard
+              </h1>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Compare automatic speech recognition models on Turkish datasets
+              </p>
+            </div>
+            <ThemeToggle />
+          </div>
+        </div>
+
+        <BenchmarkTable metrics={props.metrics} />
         <Footer metrics={props.metrics} />
       </div>
     </>
