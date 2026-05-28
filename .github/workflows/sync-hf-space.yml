@@ -1,0 +1,72 @@
+name: Sync to HF Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'app.config.*'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tailwind.config.*'
+      - 'postcss.config.*'
+      - '.github/workflows/sync-hf-space.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Prepare HF export
+        run: |
+          mkdir -p hf_export
+          cp .output/public/index.html hf_export/
+          cp -r .output/public/_build hf_export/ 2>/dev/null || true
+          cp -r .output/public/assets hf_export/ 2>/dev/null || true
+          cat > hf_export/README.md << 'EOF'
+          ---
+          title: Turkish Asr Leaderboard
+          emoji: 🔥
+          colorFrom: pink
+          colorTo: blue
+          sdk: static
+          app_file: index.html
+          pinned: false
+          custom_headers:
+            cross-origin-embedder-policy: credentialless
+            cross-origin-opener-policy: same-origin
+            cross-origin-resource-policy: cross-origin
+          ---
+          
+          # Turkish ASR Leaderboard
+          
+          Interactive benchmark leaderboard for Turkish ASR models.
+          Compares WER, CER, cosine similarity and speed across multiple datasets.
+          
+          Source: [ysdede/asr_leaderboard](https://github.com/ysdede/asr_leaderboard)
+          EOF
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - run: pip install -q huggingface_hub
+
+      - name: Upload to HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          hf upload ysdede/turkish_asr_leaderboard hf_export . \
+            --repo-type space \
+            --delete '*' \
+            --commit-message "Sync prebuilt leaderboard (${GITHUB_SHA::7})"

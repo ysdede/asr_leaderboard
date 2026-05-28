@@ -11,6 +11,8 @@ jspm_packages/
 
 # Build output
 dist/
+.output/
+.vinxi/
 .vite/
 
 # Environment variables
@@ -53,4 +55,3 @@ Thumbs.db
 tmp/
 temp/
 temp_dist_backup/
-dist/
