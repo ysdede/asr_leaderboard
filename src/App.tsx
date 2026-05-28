@@ -1,4 +1,4 @@
-import { createSignal, Show, onMount } from 'solid-js'
+import { createSignal, Show, onMount, batch } from 'solid-js'
 import type { MetricRow } from './utils/csv'
 import { parseCSV } from './utils/csv'
 import Leaderboard from './components/Leaderboard'
@@ -21,14 +21,14 @@ export default function App() {
 
   onMount(() => {
     load(buildCsvUrl(defaultConfig()))
-      .then(data => { setMetrics(data); setReady(true) })
-      .catch(e => { setError(e.message); setReady(true) })
+      .then(data => batch(() => { setMetrics(data); setReady(true) }))
+      .catch(e => batch(() => { setError(e.message); setReady(true) }))
   })
 
   async function onChange(config: DataSourceConfig) {
-    setError(null); setFetching(true); setSource(config); saveConfig(config)
+    batch(() => { setError(null); setFetching(true); setSource(config); saveConfig(config) })
     try { setMetrics(await load(buildCsvUrl(config))) }
-    catch (e: any) { setError(e.message); setMetrics(null) }
+    catch (e: any) { batch(() => { setError(e.message); setMetrics(null) }) }
     finally { setFetching(false) }
   }
 
