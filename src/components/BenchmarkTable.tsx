@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For } from 'solid-js'
+import { createSignal, createMemo, For, Show } from 'solid-js'
 import type { MetricRow } from '../utils/csv'
 import { formatNumber, friendlyDatasetName } from '../utils/csv'
 import SortHeader from './SortHeader'
@@ -13,9 +13,21 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
     return Array.from(set).sort()
   })
 
+  const hardware = createMemo(() => {
+    const set = new Set(props.metrics.map((m) => m.device_model || 'Unknown'))
+    return Array.from(set).sort()
+  })
+
+  const models = createMemo(() => {
+    const set = new Set(props.metrics.map((m) => m.asr_model_name))
+    return Array.from(set).sort()
+  })
+
   const [sortKey, setSortKey] = createSignal('wer')
   const [sortDir, setSortDir] = createSignal('asc')
   const [selectedDataset, setSelectedDataset] = createSignal('all')
+  const [selectedHardware, setSelectedHardware] = createSignal('all')
+  const [selectedModel, setSelectedModel] = createSignal('all')
 
   function handleSort(key: string) {
     if (sortKey() === key) {
@@ -27,16 +39,36 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
     }
   }
 
-  const models = createMemo(() => {
-    const set = new Set(props.metrics.map((m) => m.asr_model_name))
-    return Array.from(set).sort()
+  const activeFilters = createMemo(() => {
+    let count = 0
+    if (selectedDataset() !== 'all') count++
+    if (selectedHardware() !== 'all') count++
+    if (selectedModel() !== 'all') count++
+    return count
   })
+
+  function clearFilters() {
+    setSelectedDataset('all')
+    setSelectedHardware('all')
+    setSelectedModel('all')
+  }
 
   const sortedMetrics = createMemo(() => {
     let items = props.metrics
+
     const ds = selectedDataset()
     if (ds !== 'all') {
       items = items.filter((m) => m.dataset_name === ds)
+    }
+
+    const hw = selectedHardware()
+    if (hw !== 'all') {
+      items = items.filter((m) => m.device_model === hw)
+    }
+
+    const mdl = selectedModel()
+    if (mdl !== 'all') {
+      items = items.filter((m) => m.asr_model_name === mdl)
     }
 
     const key = sortKey()
@@ -44,38 +76,84 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
     const mult = dir === 'asc' ? 1 : -1
 
     return [...items].sort((a, b) => {
-      const aVal = parseFloat((a as Record<string, string>)[key]) || 0
-      const bVal = parseFloat((b as Record<string, string>)[key]) || 0
+      const aVal = parseFloat(String(a[sortKey() as keyof MetricRow])) || 0
+      const bVal = parseFloat(String(b[sortKey() as keyof MetricRow])) || 0
       return (aVal - bVal) * mult
     })
   })
 
   return (
     <div class="max-w-7xl mx-auto p-2 sm:p-4 w-full">
-      <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">
-        {models().length} models compared across {datasets().length} datasets
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+        {models().length} models across {datasets().length} datasets
+        <Show when={activeFilters() > 0}>
+          <span class="ml-2">
+            — {sortedMetrics().length} result{sortedMetrics().length !== 1 ? 's' : ''} matching
+            <button
+              onClick={clearFilters}
+              class="ml-2 px-2 py-0.5 text-xs rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Clear filters
+            </button>
+          </span>
+        </Show>
       </p>
 
-      {/* Dataset filter */}
-      <div class="mb-4">
-        <label class="text-xs font-medium dark:text-gray-300 text-gray-700 mr-2" for="dataset-select">
-          Filter by dataset:
+      {/* Filters */}
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <label class="text-xs font-medium dark:text-gray-300 text-gray-700">
+          Dataset:
+          <select
+            value={selectedDataset()}
+            onChange={(e) => setSelectedDataset(e.currentTarget.value)}
+            class="ml-1 text-xs border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 border-gray-300 rounded px-2 py-1 bg-white"
+          >
+            <option value="all">All ({props.metrics.length})</option>
+            <For each={datasets()}>
+              {(ds) => (
+                <option value={ds}>
+                  {friendlyDatasetName(ds)} ({props.metrics.filter((m) => m.dataset_name === ds).length})
+                </option>
+              )}
+            </For>
+          </select>
         </label>
-        <select
-          id="dataset-select"
-          value={selectedDataset()}
-          onChange={(e) => setSelectedDataset(e.currentTarget.value)}
-          class="text-xs border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 border-gray-300 rounded px-2 py-1 bg-white"
-        >
-          <option value="all">All Datasets ({props.metrics.length} results)</option>
-          <For each={datasets()}>
-            {(ds) => (
-              <option value={ds}>
-                {friendlyDatasetName(ds)} ({props.metrics.filter((m) => m.dataset_name === ds).length})
-              </option>
-            )}
-          </For>
-        </select>
+
+        <label class="text-xs font-medium dark:text-gray-300 text-gray-700">
+          Hardware:
+          <select
+            value={selectedHardware()}
+            onChange={(e) => setSelectedHardware(e.currentTarget.value)}
+            class="ml-1 text-xs border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 border-gray-300 rounded px-2 py-1 bg-white"
+          >
+            <option value="all">All</option>
+            <For each={hardware()}>
+              {(hw) => (
+                <option value={hw}>
+                  {hw} ({props.metrics.filter((m) => m.device_model === hw).length})
+                </option>
+              )}
+            </For>
+          </select>
+        </label>
+
+        <label class="text-xs font-medium dark:text-gray-300 text-gray-700">
+          Model:
+          <select
+            value={selectedModel()}
+            onChange={(e) => setSelectedModel(e.currentTarget.value)}
+            class="ml-1 text-xs border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 border-gray-300 rounded px-2 py-1 bg-white max-w-[200px]"
+          >
+            <option value="all">All</option>
+            <For each={models()}>
+              {(mdl) => (
+                <option value={mdl}>
+                  {mdl} ({props.metrics.filter((m) => m.asr_model_name === mdl).length})
+                </option>
+              )}
+            </For>
+          </select>
+        </label>
       </div>
 
       <div class="overflow-x-auto dark:bg-gray-900 bg-white rounded-lg shadow-md -mx-2 sm:mx-0">
