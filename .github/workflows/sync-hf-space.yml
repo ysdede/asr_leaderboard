@@ -29,7 +29,16 @@ jobs:
 
       - name: Prepare HF export
         run: |
+          # Pre-fetch CSV and embed as <script> into index.html
+          CSV_URL="https://huggingface.co/datasets/ysdede/asr_benchmark_store/resolve/dev/metrics-00.csv"
+          CSV_JSON=$(curl -sSfL "$CSV_URL" | python3 -c "
+          import csv, json, sys
+          reader = csv.DictReader(sys.stdin)
+          print(json.dumps([row for row in reader]))
+          " 2>/dev/null || echo '[]')
+
           mkdir -p hf_export
+          sed -i "s|</body>|<script>window.__LEADERBOARD_DATA__=${CSV_JSON};</script></body>|" .output/public/index.html
           cp .output/public/index.html hf_export/
           cp -r .output/public/_build hf_export/ 2>/dev/null || true
           cp -r .output/public/assets hf_export/ 2>/dev/null || true
