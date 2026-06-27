@@ -8,7 +8,9 @@ interface BenchmarkTableProps {
 }
 
 const tableSettingsKey = 'leaderboardTableSettings'
+const unseenDatasetValue = '__unseen__'
 const averageDatasetValue = '__average__'
+const unseenDatasetNames = ['ys-0', 'tr-med-audio']
 
 interface TableSettings {
   sortKey: string
@@ -23,13 +25,18 @@ type TableRow = MetricRow & {
   isAverage?: boolean
 }
 
+interface AverageOptions {
+  datasetName: string
+  requiredDatasets?: string[]
+}
+
 function average(values: string[]): string {
   const nums = values.map((value) => parseFloat(value)).filter((value) => Number.isFinite(value))
   if (!nums.length) return '-'
   return String(nums.reduce((sum, value) => sum + value, 0) / nums.length)
 }
 
-function buildAverageRows(metrics: MetricRow[]): TableRow[] {
+function buildAverageRows(metrics: MetricRow[], options: AverageOptions): TableRow[] {
   const byModel = new Map<string, MetricRow[]>()
 
   for (const item of metrics) {
@@ -38,21 +45,27 @@ function buildAverageRows(metrics: MetricRow[]): TableRow[] {
     else byModel.set(item.asr_model_name, [item])
   }
 
-  return Array.from(byModel.values()).map((rows) => {
-    const first = rows[0]
-    const hardware = Array.from(new Set(rows.map((row) => row.device_model || 'Unknown')))
+  return Array.from(byModel.values()).flatMap((rows) => {
+    const datasetNames = new Set(rows.map((row) => row.dataset_name))
+    if (options.requiredDatasets?.some((dataset) => !datasetNames.has(dataset))) return []
+
+    const averagedRows = options.requiredDatasets
+      ? rows.filter((row) => options.requiredDatasets?.includes(row.dataset_name))
+      : rows
+    const first = averagedRows[0]
+    const hardware = Array.from(new Set(averagedRows.map((row) => row.device_model || 'Unknown')))
 
     return {
       ...first,
-      wer: average(rows.map((row) => row.wer)),
-      cer: average(rows.map((row) => row.cer)),
-      cosine_similarity: average(rows.map((row) => row.cosine_similarity)),
-      speed: average(rows.map((row) => row.speed)),
-      dataset_name: averageDatasetValue,
+      wer: average(averagedRows.map((row) => row.wer)),
+      cer: average(averagedRows.map((row) => row.cer)),
+      cosine_similarity: average(averagedRows.map((row) => row.cosine_similarity)),
+      speed: average(averagedRows.map((row) => row.speed)),
+      dataset_name: options.datasetName,
       dataset_hf_id: '',
       device_model: hardware.length === 1 ? hardware[0] : 'Mixed',
-      timestamp: rows.reduce((max, row) => (row.timestamp > max ? row.timestamp : max), first.timestamp),
-      datasetCount: new Set(rows.map((row) => row.dataset_name)).size,
+      timestamp: averagedRows.reduce((max, row) => (row.timestamp > max ? row.timestamp : max), first.timestamp),
+      datasetCount: new Set(averagedRows.map((row) => row.dataset_name)).size,
       isAverage: true,
     }
   })
@@ -83,7 +96,7 @@ function loadTableSettings(): TableSettings {
   return {
     sortKey: saved?.sortKey || legacySort?.key || 'wer',
     sortDir: saved?.sortDir || legacySort?.direction || 'asc',
-    selectedDataset: saved?.selectedDataset || legacyDataset || averageDatasetValue,
+    selectedDataset: saved?.selectedDataset || legacyDataset || unseenDatasetValue,
     selectedHardware: saved?.selectedHardware || 'all',
     selectedModel: saved?.selectedModel || 'all',
   }
@@ -124,7 +137,12 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
 
   createEffect(() => {
     const dataset = selectedDataset()
-    if (dataset !== 'all' && dataset !== averageDatasetValue && !datasets().includes(dataset)) setSelectedDataset('all')
+    if (
+      dataset !== 'all'
+      && dataset !== unseenDatasetValue
+      && dataset !== averageDatasetValue
+      && !datasets().includes(dataset)
+    ) setSelectedDataset('all')
 
     const hw = selectedHardware()
     if (hw !== 'all' && !hardware().includes(hw)) setSelectedHardware('all')
@@ -167,13 +185,20 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
     setSelectedModel('all')
   }
 
-  const averageMetrics = createMemo<TableRow[]>(() => buildAverageRows(props.metrics))
+  const unseenMetrics = createMemo<TableRow[]>(() => {
+    const items = props.metrics.filter((item) => unseenDatasetNames.includes(item.dataset_name))
+    return buildAverageRows(items, { datasetName: unseenDatasetValue, requiredDatasets: unseenDatasetNames })
+  })
+
+  const averageMetrics = createMemo<TableRow[]>(() => buildAverageRows(props.metrics, { datasetName: averageDatasetValue }))
 
   const sortedMetrics = createMemo<TableRow[]>(() => {
     const ds = selectedDataset()
     let items: TableRow[] = props.metrics
 
-    if (ds !== 'all' && ds !== averageDatasetValue) {
+    if (ds === unseenDatasetValue) {
+      items = items.filter((m) => unseenDatasetNames.includes(m.dataset_name))
+    } else if (ds !== 'all' && ds !== averageDatasetValue) {
       items = items.filter((m) => m.dataset_name === ds)
     }
 
@@ -187,8 +212,10 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
       items = items.filter((m) => m.asr_model_name === mdl)
     }
 
-    if (ds === averageDatasetValue) {
-      items = buildAverageRows(items)
+    if (ds === unseenDatasetValue) {
+      items = buildAverageRows(items, { datasetName: unseenDatasetValue, requiredDatasets: unseenDatasetNames })
+    } else if (ds === averageDatasetValue) {
+      items = buildAverageRows(items, { datasetName: averageDatasetValue })
     }
 
     const key = sortKey()
@@ -229,6 +256,7 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
             class="ml-1 text-xs border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 border-gray-300 rounded px-2 py-1 bg-white"
           >
             <option value="all">All ({props.metrics.length})</option>
+            <option value={unseenDatasetValue}>Unseen ({unseenMetrics().length})</option>
             <option value={averageDatasetValue}>Average across datasets ({averageMetrics().length})</option>
             <For each={datasets()}>
               {(ds) => (
@@ -325,7 +353,11 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
                   <td class="py-2 px-2 text-xs text-center whitespace-nowrap">
                     <Show
                       when={!item.isAverage}
-                      fallback={<span class="dark:text-gray-300 text-gray-600">Average ({item.datasetCount})</span>}
+                      fallback={
+                        <span class="dark:text-gray-300 text-gray-600">
+                          {item.dataset_name === unseenDatasetValue ? 'Unseen' : 'Average'} ({item.datasetCount})
+                        </span>
+                      }
                     >
                       <a
                         href={`https://huggingface.co/datasets/${item.dataset_hf_id}`}

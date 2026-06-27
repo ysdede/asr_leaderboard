@@ -3,7 +3,7 @@ import type { MetricRow } from '../utils/csv'
 
 const DEFAULT_OWNER = 'ysdede'
 const DEFAULT_REPO = 'asr_benchmark_store'
-const DEFAULT_BRANCH = 'dev'
+const DEFAULT_BRANCH = 'main'
 
 export interface DataSourceConfig {
   owner: string
