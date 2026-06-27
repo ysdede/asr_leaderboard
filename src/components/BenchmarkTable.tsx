@@ -203,7 +203,7 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
                   </td>
                   <td class="py-2 px-2 text-xs text-center whitespace-nowrap">
                     <a
-                      href={`https://huggingface.co/${item.dataset_hf_id}`}
+                      href={`https://huggingface.co/datasets/${item.dataset_hf_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       class="dark:text-blue-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 hover:underline"
