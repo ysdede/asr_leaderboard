@@ -83,7 +83,7 @@ function loadTableSettings(): TableSettings {
   return {
     sortKey: saved?.sortKey || legacySort?.key || 'wer',
     sortDir: saved?.sortDir || legacySort?.direction || 'asc',
-    selectedDataset: saved?.selectedDataset || legacyDataset || 'all',
+    selectedDataset: saved?.selectedDataset || legacyDataset || averageDatasetValue,
     selectedHardware: saved?.selectedHardware || 'all',
     selectedModel: saved?.selectedModel || 'all',
   }
