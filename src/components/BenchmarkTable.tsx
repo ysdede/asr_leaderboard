@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For, Show } from 'solid-js'
+import { createSignal, createMemo, createEffect, For, Show } from 'solid-js'
 import type { MetricRow } from '../utils/csv'
 import { formatNumber, friendlyDatasetName } from '../utils/csv'
 import SortHeader from './SortHeader'
@@ -7,7 +7,59 @@ interface BenchmarkTableProps {
   metrics: MetricRow[]
 }
 
+const tableSettingsKey = 'leaderboardTableSettings'
+
+interface TableSettings {
+  sortKey: string
+  sortDir: string
+  selectedDataset: string
+  selectedHardware: string
+  selectedModel: string
+}
+
+function readJson<T>(key: string): T | null {
+  try {
+    const stored = localStorage.getItem(key)
+    return stored ? JSON.parse(stored) as T : null
+  } catch {
+    return null
+  }
+}
+
+function readString(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function loadTableSettings(): TableSettings {
+  const saved = readJson<Partial<TableSettings>>(tableSettingsKey)
+  const legacySort = readJson<{ key?: string, direction?: string }>('sortConfig')
+  const legacyDataset = readString('selectedDataset')
+
+  return {
+    sortKey: saved?.sortKey || legacySort?.key || 'wer',
+    sortDir: saved?.sortDir || legacySort?.direction || 'asc',
+    selectedDataset: saved?.selectedDataset || legacyDataset || 'all',
+    selectedHardware: saved?.selectedHardware || 'all',
+    selectedModel: saved?.selectedModel || 'all',
+  }
+}
+
+function saveTableSettings(settings: TableSettings) {
+  try {
+    localStorage.setItem(tableSettingsKey, JSON.stringify(settings))
+    localStorage.setItem('selectedDataset', settings.selectedDataset)
+    localStorage.setItem('sortConfig', JSON.stringify({ key: settings.sortKey, direction: settings.sortDir }))
+  } catch {
+  }
+}
+
 export default function BenchmarkTable(props: BenchmarkTableProps) {
+  const initialSettings = loadTableSettings()
+
   const datasets = createMemo(() => {
     const set = new Set(props.metrics.map((m) => m.dataset_name))
     return Array.from(set).sort()
@@ -23,11 +75,32 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
     return Array.from(set).sort()
   })
 
-  const [sortKey, setSortKey] = createSignal('wer')
-  const [sortDir, setSortDir] = createSignal('asc')
-  const [selectedDataset, setSelectedDataset] = createSignal('all')
-  const [selectedHardware, setSelectedHardware] = createSignal('all')
-  const [selectedModel, setSelectedModel] = createSignal('all')
+  const [sortKey, setSortKey] = createSignal(initialSettings.sortKey)
+  const [sortDir, setSortDir] = createSignal(initialSettings.sortDir)
+  const [selectedDataset, setSelectedDataset] = createSignal(initialSettings.selectedDataset)
+  const [selectedHardware, setSelectedHardware] = createSignal(initialSettings.selectedHardware)
+  const [selectedModel, setSelectedModel] = createSignal(initialSettings.selectedModel)
+
+  createEffect(() => {
+    const dataset = selectedDataset()
+    if (dataset !== 'all' && !datasets().includes(dataset)) setSelectedDataset('all')
+
+    const hw = selectedHardware()
+    if (hw !== 'all' && !hardware().includes(hw)) setSelectedHardware('all')
+
+    const mdl = selectedModel()
+    if (mdl !== 'all' && !models().includes(mdl)) setSelectedModel('all')
+  })
+
+  createEffect(() => {
+    saveTableSettings({
+      sortKey: sortKey(),
+      sortDir: sortDir(),
+      selectedDataset: selectedDataset(),
+      selectedHardware: selectedHardware(),
+      selectedModel: selectedModel(),
+    })
+  })
 
   function handleSort(key: string) {
     if (sortKey() === key) {
