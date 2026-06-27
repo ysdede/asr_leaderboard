@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Hugging Face inspired styles and color scheme */
 :root {
   --hf-primary: #0ea5e9; /* Hugging Face blue */
