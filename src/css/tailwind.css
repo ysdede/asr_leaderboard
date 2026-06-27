@@ -73,9 +73,9 @@ td {
 }
 
 .datasets-col {
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   max-width: 12rem;
 }
 

@@ -22,6 +22,7 @@ interface TableSettings {
 
 type TableRow = MetricRow & {
   datasetCount?: number
+  includedDatasets?: string[]
   isAverage?: boolean
 }
 
@@ -34,6 +35,29 @@ function average(values: string[]): string {
   const nums = values.map((value) => parseFloat(value)).filter((value) => Number.isFinite(value))
   if (!nums.length) return '-'
   return String(nums.reduce((sum, value) => sum + value, 0) / nums.length)
+}
+
+function compactDatasetName(name: string): string {
+  const compactNames: Record<string, string> = {
+    'ys-0': 'YS-0',
+    'tr-med-audio': 'TR-Med',
+    turkishvoicedataset: 'Turkish Voice',
+    commonvoice_17_tr_fixed: 'CV17 TR',
+  }
+  return compactNames[name] || friendlyDatasetName(name)
+}
+
+function aggregateDatasetLabel(row: TableRow): string {
+  const prefix = row.dataset_name === unseenDatasetValue ? 'Unseen' : 'Average'
+  const names = row.includedDatasets || []
+  if (!names.length) return `${prefix} (${row.datasetCount})`
+  return `${prefix}: ${names.map(compactDatasetName).join(' + ')}`
+}
+
+function aggregateDatasetTitle(row: TableRow): string {
+  const names = row.includedDatasets || []
+  if (!names.length) return aggregateDatasetLabel(row)
+  return names.map(friendlyDatasetName).join(' + ')
 }
 
 function buildAverageRows(metrics: MetricRow[], options: AverageOptions): TableRow[] {
@@ -54,6 +78,7 @@ function buildAverageRows(metrics: MetricRow[], options: AverageOptions): TableR
       : rows
     const first = averagedRows[0]
     const hardware = Array.from(new Set(averagedRows.map((row) => row.device_model || 'Unknown')))
+    const includedDatasets = Array.from(new Set(averagedRows.map((row) => row.dataset_name)))
 
     return {
       ...first,
@@ -65,7 +90,8 @@ function buildAverageRows(metrics: MetricRow[], options: AverageOptions): TableR
       dataset_hf_id: '',
       device_model: hardware.length === 1 ? hardware[0] : 'Mixed',
       timestamp: averagedRows.reduce((max, row) => (row.timestamp > max ? row.timestamp : max), first.timestamp),
-      datasetCount: new Set(averagedRows.map((row) => row.dataset_name)).size,
+      datasetCount: includedDatasets.length,
+      includedDatasets,
       isAverage: true,
     }
   })
@@ -316,7 +342,7 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
               <SortHeader label="CER" sortKey="cer" currentKey={sortKey()} direction={sortDir()} onSort={handleSort} />
               <SortHeader label="Similarity" sortKey="cosine_similarity" currentKey={sortKey()} direction={sortDir()} onSort={handleSort} />
               <SortHeader label="Speed" sortKey="speed" currentKey={sortKey()} direction={sortDir()} onSort={handleSort} />
-              <th class="py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
+              <th class="datasets-col py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
                 Dataset
               </th>
               <th class="hidden sm:table-cell py-2 px-2 text-center text-xs font-medium dark:text-gray-400 text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -350,12 +376,15 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
                   <td class="py-2 px-2 text-xs text-center whitespace-nowrap">
                     {Number.isFinite(parseFloat(item.speed)) ? `${Math.round(parseFloat(item.speed))}x` : '-'}
                   </td>
-                  <td class="py-2 px-2 text-xs text-center whitespace-nowrap">
+                  <td class="datasets-col py-2 px-2 text-xs text-center">
                     <Show
                       when={!item.isAverage}
                       fallback={
-                        <span class="dark:text-gray-300 text-gray-600">
-                          {item.dataset_name === unseenDatasetValue ? 'Unseen' : 'Average'} ({item.datasetCount})
+                        <span
+                          class="block truncate dark:text-gray-300 text-gray-600"
+                          title={aggregateDatasetTitle(item)}
+                        >
+                          {aggregateDatasetLabel(item)}
                         </span>
                       }
                     >
@@ -363,7 +392,8 @@ export default function BenchmarkTable(props: BenchmarkTableProps) {
                         href={`https://huggingface.co/datasets/${item.dataset_hf_id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="dark:text-blue-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 hover:underline"
+                        class="block truncate dark:text-blue-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 hover:underline"
+                        title={friendlyDatasetName(item.dataset_name)}
                       >
                         {friendlyDatasetName(item.dataset_name)}
                       </a>
